@@ -93,6 +93,7 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         self.learning_rate = learning_rate
         self.training = training
         self.nn_baseline = nn_baseline
+        self.loss = nn.MSELoss()
 
         self.mean_net = build_mlp(
             input_size=self.ob_dim,
@@ -109,6 +110,13 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             itertools.chain([self.logstd], self.mean_net.parameters()),
             self.learning_rate
         )
+
+    def get_action(self, obs: np.ndarray) -> np.ndarray:
+        # action = self(ptu.from_numpy(obs))
+        # return ptu.to_numpy(action)
+        distribution = self(ptu.from_numpy(obs))
+        action = distribution.sample()
+        return ptu.to_numpy(action)
 
     def save(self, filepath):
         """
@@ -129,7 +137,11 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
         # through it. For example, you can return a torch.FloatTensor. You can also
         # return more flexible objects, such as a
         # `torch.distributions.Distribution` object. It's up to you!
-        raise NotImplementedError
+        mean = self.mean_net(observation)
+        std = torch.exp(self.logstd)
+        distribution = distributions.Normal(mean, std)
+        # action = distribution.rsample()
+        return distribution
 
     def update(self, observations, actions):
         """
@@ -141,7 +153,18 @@ class MLPPolicySL(BasePolicy, nn.Module, metaclass=abc.ABCMeta):
             dict: 'Training Loss': supervised learning loss
         """
         # TODO: update the policy and return the loss
-        loss = TODO
+        # Use mean_net directly for supervised learning, not sampled actions
+        actions = ptu.from_numpy(actions)
+        distribution = self(ptu.from_numpy(observations))
+        log_probs = distribution.log_prob(actions).sum(axis=-1)
+        # print(f"log_probs.mean(): {log_probs.mean()}")
+        loss = -log_probs.mean()
+        # action_preds = self(ptu.from_numpy(observations))
+        # loss = self.loss(action_preds, actions)
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
         return {
             # You can add extra logging information here, but keep this line
             'Training Loss': ptu.to_numpy(loss),

@@ -1,4 +1,4 @@
-from gym.wrappers import RecordVideo
+from gymnasium.wrappers import RecordVideo
 import glob
 import io
 import base64
@@ -8,7 +8,7 @@ from IPython import display as ipythondisplay
 ## modified from https://colab.research.google.com/drive/1flu31ulJlgiRL1dnN2ir8wGh9p7Zij2t#scrollTo=TCelFzWY9MBI
 
 def show_video():
-  mp4list = glob.glob('/content/video/*.mp4')
+  mp4list = glob.glob('./video/*.mp4')
   if len(mp4list) > 0:
     mp4 = mp4list[0]
     video = io.open(mp4, 'r+b').read()
@@ -22,5 +22,5 @@ def show_video():
     
 
 def wrap_env(env):
-  env = RecordVideo(env, '/content/video')
+  env = RecordVideo(env, './video')
   return env
