@@ -1,4 +1,4 @@
-from gym.wrappers import RecordVideo
+from gymnasium.wrappers import RecordVideo
 import glob
 import io
 import base64
