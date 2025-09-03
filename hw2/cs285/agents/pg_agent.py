@@ -133,8 +133,9 @@ class PGAgent(nn.Module):
             advantages = q_values.copy()
         else:
             # TODO: run the critic and use it as a baseline -- Done
-            values = self.critic(ptu.from_numpy(obs))
-            values = ptu.to_numpy(values).squeeze(-1)
+            with torch.no_grad():
+                values_t = self.critic(ptu.from_numpy(obs))
+            values = ptu.to_numpy(values_t).squeeze(-1)
             assert values.shape == q_values.shape
 
             if self.gae_lambda is None:
