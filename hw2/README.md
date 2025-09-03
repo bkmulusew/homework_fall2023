@@ -1,6 +1,6 @@
 ## Setup
 
-See [installation.md](installation.md). It's worth going through this again since some dependencies have changed since homework 1. You also need to make sure to run `pip install -e .` in the hw2 folder.
+See [installation.md](installation.md). It's worth going through this again since some dependencies have changed since homework 1. You also need to make sure to run `pip install -e .` in the hw2 folder. Also set `export MUJOCO_GL=egl`
 
 ## Running on Google Cloud
 Starting with HW2, we will be providing some infrastructure to run experiments on Google Cloud compute. There are some very important caveats:
