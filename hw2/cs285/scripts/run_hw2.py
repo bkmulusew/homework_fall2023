@@ -10,12 +10,13 @@ import gymnasium as gym
 import numpy as np
 import torch
 from cs285.infrastructure import pytorch_util as ptu
+from gymnasium.wrappers import RecordVideo
 
 from cs285.infrastructure import utils
 from cs285.infrastructure.logger import Logger
 from cs285.infrastructure.action_noise_wrapper import ActionNoiseWrapper
 
-MAX_NVIDEO = 2
+MAX_NVIDEO = 1
 
 
 def run_training_loop(args):
@@ -28,6 +29,15 @@ def run_training_loop(args):
 
     # make the gym environment
     env = gym.make(args.env_name, render_mode=None)
+    video_dir = f"video/{args.exp_name}"
+    os.makedirs(video_dir, exist_ok=True)
+    eval_env = gym.make(args.env_name, render_mode="rgb_array")
+    eval_env = RecordVideo(
+        eval_env,
+        video_folder=video_dir,
+        name_prefix="eval",                 # files like eval-episode-*.mp4
+        episode_trigger=lambda ep: True     # record every eval episode
+    )
     discrete = isinstance(env.action_space, gym.spaces.Discrete)
 
     # add action noise, if needed
@@ -110,10 +120,10 @@ def run_training_loop(args):
 
             logger.flush()
 
-        if args.video_log_freq != -1 and itr % args.video_log_freq == 0:
+        if args.video_log_freq != -1 and (itr % args.video_log_freq == 0 or itr == args.n_iter - 1):
             print("\nCollecting video rollouts...")
             eval_video_trajs = utils.sample_n_trajectories(
-                env, agent.actor, MAX_NVIDEO, max_ep_len, render=True
+                eval_env, agent.actor, MAX_NVIDEO, max_ep_len, render=True
             )
 
             logger.log_trajs_as_videos(
@@ -123,6 +133,11 @@ def run_training_loop(args):
                 max_videos_to_save=MAX_NVIDEO,
                 video_title="eval_rollouts",
             )
+
+    try:
+        eval_env.close()
+    except Exception:
+        pass
 
 
 def main():

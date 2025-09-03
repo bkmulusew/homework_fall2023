@@ -24,7 +24,7 @@ def sample_trajectory(
             if hasattr(env, "sim"):
                 img = env.sim.render(camera_name="track", height=500, width=500)[::-1]
             else:
-                img = env.render(mode="single_rgb_array")
+                img = env.render()
             image_obs.append(
                 cv2.resize(img, dsize=(250, 250), interpolation=cv2.INTER_CUBIC)
             )

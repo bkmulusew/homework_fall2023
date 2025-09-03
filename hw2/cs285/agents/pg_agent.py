@@ -134,7 +134,7 @@ class PGAgent(nn.Module):
         else:
             # TODO: run the critic and use it as a baseline -- Done
             values = self.critic(ptu.from_numpy(obs))
-            values = ptu.to_numpy(values)
+            values = ptu.to_numpy(values).squeeze(-1)
             assert values.shape == q_values.shape
 
             if self.gae_lambda is None:

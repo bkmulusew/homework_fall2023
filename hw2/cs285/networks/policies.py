@@ -103,6 +103,8 @@ class MLPPolicyPG(MLPPolicy):
         # TODO: implement the policy gradient actor update. -- Done
         distribution = self(obs)
         log_probs = distribution.log_prob(actions)
+        if log_probs.ndim > 1:                           # e.g., (B, act_dim)
+            log_probs = log_probs.sum(dim=-1)
         loss = -(log_probs * advantages).mean()
         self.optimizer.zero_grad()
         loss.backward()
