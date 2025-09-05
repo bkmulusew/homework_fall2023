@@ -10,9 +10,9 @@ from cs285.networks.mlp_policy import MLPPolicy
 from cs285.networks.state_action_value_critic import StateActionCritic
 import cs285.infrastructure.pytorch_util as ptu
 
-from gymnasium.wrappers.rescale_action import RescaleAction
-from gymnasium.wrappers.clip_action import ClipAction
-from gymnasium.wrappers.record_episode_statistics import RecordEpisodeStatistics
+from gymnasium.wrappers import RescaleAction
+from gymnasium.wrappers import ClipAction
+from gymnasium.wrappers import RecordEpisodeStatistics
 
 
 def sac_config(

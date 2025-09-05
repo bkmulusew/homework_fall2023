@@ -81,12 +81,12 @@ class DQNAgent(nn.Module):
                 next_action = next_qa_values.argmax(dim=1, keepdim=True)  # (B, 1)
             
             next_q_values = next_qa_values.gather(1, next_action).squeeze(1)  # (B,)
-            not_done = (1.0 - done.float()).view(-1)  # (B,)
-            target_values = reward.view(-1) + self.discount * not_done * next_q_values  # (B,)
+            not_done = (1.0 - done.float())  # (B,)
+            target_values = reward + self.discount * not_done * next_q_values  # (B,)
 
         # TODO(student): train the critic with the target values -- DONE
         qa_values = self.critic(obs)  # (B, A)
-        q_values = qa_values.gather(1, action.long().view(-1, 1)).squeeze(1)  # (B,)
+        q_values = qa_values.gather(1, action.long().unsqueeze(1)).squeeze(1)  # (B,)
         loss = self.critic_loss(q_values, target_values)
 
 
