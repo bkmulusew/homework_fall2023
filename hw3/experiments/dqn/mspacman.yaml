@@ -1,5 +1,5 @@
 base_config: dqn_atari
-env_name: MsPacmanNoFrameskip-v0
+env_name: MsPacmanNoFrameskip-v4
 
 learning_rate: 1.0e-4
 discount: 0.99
