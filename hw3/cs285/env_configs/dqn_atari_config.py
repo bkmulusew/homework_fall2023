@@ -1,6 +1,7 @@
 from typing import Optional, Tuple
 
 import gymnasium as gym
+import ale_py
 
 import numpy as np
 import torch
@@ -87,6 +88,7 @@ def atari_dqn_config(
     )
 
     def make_env(render: bool = False):
+        gym.register_envs(ale_py)
         return wrap_deepmind(
             gym.make(env_name, render_mode="rgb_array" if render else None)
         )
