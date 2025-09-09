@@ -4,7 +4,7 @@ exp_name: sac_hopper_doubleq
 
 # Same for all Hopper experiments
 base_config: sac
-env_name: Hopper-v4
+env_name: Hopper-v5
 
 total_steps: 100000
 random_steps: 5000

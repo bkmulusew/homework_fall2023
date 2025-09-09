@@ -215,11 +215,15 @@ class SoftActorCritic(nn.Module):
             if self.use_entropy_bonus and self.backup_entropy:
                 # TODO(student): Add entropy bonus to the target values for SAC -- DONE
                 next_action_entropy = self.entropy(next_action_distribution)
-                entropy_bonus = self.temperature * next_action_entropy.unsqueeze(0)
-                next_qs += entropy_bonus
+                next_action_entropy = next_action_entropy[None].expand(
+                    (self.num_critic_networks, batch_size)
+                ).contiguous()
+                next_entropy_bonus = self.temperature * next_action_entropy
+                next_qs += next_entropy_bonus
 
             # Compute the target Q-value
-            target_values: torch.Tensor = reward.unsqueeze(0) + self.discount * (1 - done.unsqueeze(0)) * next_qs
+            not_done = (1.0 - done.float())
+            target_values: torch.Tensor = reward.unsqueeze(0) + self.discount * not_done.unsqueeze(0) * next_qs
             assert target_values.shape == (
                 self.num_critic_networks,
                 batch_size
@@ -250,11 +254,9 @@ class SoftActorCritic(nn.Module):
 
         # TODO(student): Compute the entropy of the action distribution. -- DONE
         # Note: Think about whether to use .rsample() or .sample() here...
-        a = action_distribution.rsample((self.num_actor_samples,))
-        logp = action_distribution.log_prob(a)
-        if logp.ndim > 2:
-            logp = logp.sum(dim=-1)
-        return (-logp).mean(dim=0)
+        sampled_action = action_distribution.rsample()
+        entropy = -action_distribution.log_prob(sampled_action)
+        return entropy
 
     def actor_loss_reinforce(self, obs: torch.Tensor):
         batch_size = obs.shape[0]
@@ -272,12 +274,9 @@ class SoftActorCritic(nn.Module):
             ), action.shape
 
             obs_exp = obs.unsqueeze(0).expand(self.num_actor_samples, batch_size, -1)
-            obs_flat   = obs_exp.reshape(self.num_actor_samples * batch_size, -1)
-            action_flat= action.reshape(self.num_actor_samples * batch_size, self.action_dim)
 
             # TODO(student): Compute Q-values for the current state-action pair -- DONE
-            q_values = self.critic(obs_flat, action_flat)
-            q_values = q_values.view(self.num_critic_networks, self.num_actor_samples, batch_size)                    # (C, S, B)
+            q_values = self.critic(obs_exp, action)
             assert q_values.shape == (
                 self.num_critic_networks,
                 self.num_actor_samples,
@@ -291,11 +290,7 @@ class SoftActorCritic(nn.Module):
         # Do REINFORCE: calculate log-probs and use the Q-values
         # TODO(student) -- DONE
         log_probs = action_distribution.log_prob(action)
-        if log_probs.ndim > 2:
-            log_probs = log_probs.sum(dim=-1)  # Sum across action dimensions
-
-        weight = (self.temperature * log_probs - advantage).detach()
-        loss = -(weight * log_probs).mean()
+        loss = -(log_probs * advantage).mean()
 
         return loss, torch.mean(self.entropy(action_distribution))
 
@@ -308,22 +303,13 @@ class SoftActorCritic(nn.Module):
         # TODO(student): Sample actions -- DONE
         # Note: Think about whether to use .rsample() or .sample() here...
         action = action_distribution.rsample((self.num_actor_samples,))
-
-        log_probs = action_distribution.log_prob(action)
-        if log_probs.ndim > 2:
-            log_probs = log_probs.sum(dim=-1)  # Sum across action dimensions
-
         obs_exp = obs.unsqueeze(0).expand(self.num_actor_samples, batch_size, -1)
-        obs_flat   = obs_exp.reshape(self.num_actor_samples * batch_size, -1)
-        action_flat= action.reshape(self.num_actor_samples * batch_size, self.action_dim)
 
         # TODO(student): Compute Q-values for the sampled state-action pair -- DONE
-        q_values = self.critic(obs_flat, action_flat)
-        q_values = q_values.view(self.num_critic_networks, self.num_actor_samples, batch_size)                    # (C, S, B)
-        q_values = q_values.mean(dim=0)
+        q_values = self.critic(obs_exp, action)
 
         # TODO(student): Compute the actor loss -- DONE
-        loss = (self.temperature * log_probs - q_values).mean()
+        loss = -q_values.mean()
 
         return loss, torch.mean(self.entropy(action_distribution))
 

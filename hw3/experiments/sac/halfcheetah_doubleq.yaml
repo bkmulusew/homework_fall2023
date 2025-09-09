@@ -6,7 +6,7 @@ exp_name: doubleq
 
 # All these are the same as from the last problem...
 base_config: sac
-env_name: HalfCheetah-v4
+env_name: HalfCheetah-v5
 
 total_steps: 1000000
 random_steps: 5000
