@@ -29,15 +29,17 @@ def run_training_loop(args):
 
     # make the gym environment
     env = gym.make(args.env_name, render_mode=None)
-    video_dir = f"video/{args.exp_name}"
-    os.makedirs(video_dir, exist_ok=True)
-    eval_env = gym.make(args.env_name, render_mode="rgb_array")
-    eval_env = RecordVideo(
-        eval_env,
-        video_folder=video_dir,
-        name_prefix="eval",                 # files like eval-episode-*.mp4
-        episode_trigger=lambda ep: True     # record every eval episode
-    )
+
+    if args.video_log_freq != -1
+        video_dir = f"video/{args.exp_name}"
+        os.makedirs(video_dir, exist_ok=True)
+        eval_env = gym.make(args.env_name, render_mode="rgb_array")
+        eval_env = RecordVideo(
+            eval_env,
+            video_folder=video_dir,
+            name_prefix="eval",                 # files like eval-episode-*.mp4
+            episode_trigger=lambda ep: True     # record every eval episode
+        )
     discrete = isinstance(env.action_space, gym.spaces.Discrete)
 
     # add action noise, if needed
@@ -125,7 +127,6 @@ def run_training_loop(args):
             eval_video_trajs = utils.sample_n_trajectories(
                 eval_env, agent.actor, MAX_NVIDEO, max_ep_len, render=True
             )
-
             logger.log_trajs_as_videos(
                 eval_video_trajs,
                 itr,
@@ -134,11 +135,8 @@ def run_training_loop(args):
                 video_title="eval_rollouts",
             )
 
-    try:
+    if args.video_log_freq != -1:
         eval_env.close()
-    except Exception:
-        pass
-
 
 def main():
     import argparse
