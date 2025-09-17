@@ -2,7 +2,7 @@ from collections import OrderedDict
 import numpy as np
 import copy
 from cs285.networks.mlp_policy import MLPPolicy
-import gym
+import gymnasium as gym
 import cv2
 from cs285.infrastructure import pytorch_util as ptu
 from typing import Dict, Tuple, List
@@ -23,7 +23,7 @@ def sample_trajectory(
     env: gym.Env, policy: MLPPolicy, max_length: int, render: bool = False
 ) -> Dict[str, np.ndarray]:
     """Sample a rollout in the environment from a policy."""
-    ob = env.reset()
+    ob, _ = env.reset()
     obs, acs, rewards, next_obs, dones, image_obs = [], [], [], [], [], []
     steps = 0
 
@@ -44,12 +44,12 @@ def sample_trajectory(
 
         ac = policy.get_action(ob)
 
-        next_ob, rew, done, info = env.step(ac)
+        next_ob, rew, done, truncated, info = env.step(ac)
 
         steps += 1
         # only record a "done" into the replay buffer if not truncated
         done_not_truncated = (
-            done and steps <= max_length and not info.get("TimeLimit.truncated", False)
+            done and steps <= max_length and not truncated
         )
 
         # record result of taking that action

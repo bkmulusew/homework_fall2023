@@ -1,9 +1,17 @@
-import gym
+import gymnasium as gym
 import numpy as np
-from gym import spaces
-
+from gymnasium import spaces
+from gymnasium.utils import seeding
 
 class Obstacles(gym.Env):
+    metadata = {
+        "render_modes": [
+            "human",
+            "rgb_array",
+        ],
+        "render_fps": 100,
+    }
+
     def __init__(
         self, start=[-0.5, 0.75], end=[0.7, -0.8], random_starts=True, **kwargs
     ):
@@ -42,9 +50,10 @@ class Obstacles(gym.Env):
 
         self.eps = 0.1
         self.fig = self.plt.figure()
+        self.np_random, _ = seeding.np_random(None)  # set up RNG for Gymnasium
 
     def seed(self, seed):
-        np.random.seed(seed)
+        self.np_random, _ = seeding.np_random(seed)
 
     #########################################
 
@@ -63,14 +72,15 @@ class Obstacles(gym.Env):
 
     #########################################
 
-    def reset(self, seed=None):
-        if seed:
-            self.seed(seed)
+    def reset(self, *, seed=None, options=None):
+        if seed is not None:
+            self.np_random, _ = seeding.np_random(seed)
 
         self.reset_pose = self.pick_start_pos()
         self.reset_vel = self.end
-
-        return self.do_reset(self.reset_pose, self.reset_vel)
+        obs = self.do_reset(self.reset_pose, self.reset_vel)
+        info = {}  # you can add anything useful here
+        return obs, info
 
     def do_reset(self, reset_pose, reset_vel, reset_goal=None):
         self.current = reset_pose.copy()
@@ -86,7 +96,7 @@ class Obstacles(gym.Env):
     #########################################
 
     def _get_obs(self):
-        return np.concatenate([self.current, self.end])
+        return np.concatenate([self.current, self.end]).astype(np.float32)
 
     def get_score(self, obs):
         curr_pos = obs[:2]
@@ -155,8 +165,9 @@ class Obstacles(gym.Env):
         reward, done = self.get_reward(ob, action)
         score = self.get_score(ob)
         env_info = {"ob": ob, "rewards": self.reward_dict, "score": score}
+        truncated = False
 
-        return ob, reward, done, env_info
+        return ob, float(reward), bool(done), bool(truncated), env_info
 
     ########################################
     # utility functions

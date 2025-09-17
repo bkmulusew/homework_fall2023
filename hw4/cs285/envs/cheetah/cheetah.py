@@ -1,17 +1,15 @@
 import numpy as np
-from gym import utils
-from gym.envs.mujoco import mujoco_env
-from gym.spaces import Box
+from gymnasium import utils
+from gymnasium.envs.mujoco import MujocoEnv
+from gymnasium.spaces import Box
 
 
-class HalfCheetahEnv(mujoco_env.MujocoEnv, utils.EzPickle):
+class HalfCheetahEnv(MujocoEnv, utils.EzPickle):
     metadata = {
         "render_modes": [
             "human",
             "rgb_array",
             "depth_array",
-            "single_rgb_array",
-            "single_depth_array",
         ],
         "render_fps": 100,
     }
@@ -19,7 +17,7 @@ class HalfCheetahEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     def __init__(self, **kwargs):
         observation_space = Box(low=-np.inf, high=np.inf, shape=(21,), dtype=np.float64)
 
-        mujoco_env.MujocoEnv.__init__(
+        MujocoEnv.__init__(
             self, "half_cheetah.xml", 1, observation_space=observation_space, **kwargs
         )
         utils.EzPickle.__init__(self, **kwargs)
@@ -105,7 +103,7 @@ class HalfCheetahEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         # obs/reward/done/score
         ob = self._get_obs()
-        rew, done = self.get_reward(ob, action)
+        rew, terminated = self.get_reward(ob, action)
         score = self.get_score(ob)
 
         # return
@@ -114,7 +112,8 @@ class HalfCheetahEnv(mujoco_env.MujocoEnv, utils.EzPickle):
             "rewards": self.reward_dict,
             "score": score,
         }
-        return ob, rew, done, env_info
+        truncated = False
+        return ob, float(rew), bool(terminated), bool(truncated), env_info
 
     def _get_obs(self):
         self.obs_dict = {}
@@ -132,12 +131,12 @@ class HalfCheetahEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
     ##############################################
 
-    def reset_model(self, seed=None):
+    def reset_model(self):
         # set reset pose/vel
         self.reset_pose = self.init_qpos + self.np_random.uniform(
             low=-0.1, high=0.1, size=self.model.nq
         )
-        self.reset_vel = self.init_qvel + self.np_random.randn(self.model.nv) * 0.1
+        self.reset_vel = self.init_qvel + self.np_random.normal(self.model.nv) * 0.1
 
         # reset the env to that pose/vel
         return self.do_reset(self.reset_pose.copy(), self.reset_vel.copy())

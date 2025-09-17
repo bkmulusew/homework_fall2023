@@ -1,7 +1,7 @@
 import torch.nn as nn
 from cs285.infrastructure import pytorch_util as ptu
-from gym.wrappers.record_episode_statistics import RecordEpisodeStatistics
-import gym
+from gymnasium.wrappers import RecordEpisodeStatistics
+import gymnasium as gym
 import torch
 from typing import Optional
 

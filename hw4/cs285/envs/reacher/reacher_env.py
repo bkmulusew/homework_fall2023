@@ -1,19 +1,17 @@
 import numpy as np
-from gym import utils
-from gym.envs.mujoco import mujoco_env
+from gymnasium import utils
+from gymnasium.envs.mujoco import MujocoEnv
 import os
-from gym.spaces import Box
+from gymnasium.spaces import Box
 import mujoco
 
 
-class Reacher7DOFEnv(mujoco_env.MujocoEnv, utils.EzPickle):
+class Reacher7DOFEnv(MujocoEnv, utils.EzPickle):
     metadata = {
         "render_modes": [
             "human",
             "rgb_array",
             "depth_array",
-            "single_rgb_array",
-            "single_depth_array",
         ],
         "render_fps": 50,
     }
@@ -25,7 +23,7 @@ class Reacher7DOFEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         self.target_sid = -1
 
         curr_dir = os.path.dirname(os.path.abspath(__file__))
-        mujoco_env.MujocoEnv.__init__(
+        MujocoEnv.__init__(
             self,
             curr_dir + "/assets/sawyer.xml",
             2,
@@ -66,8 +64,9 @@ class Reacher7DOFEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         # finalize step
         env_info = {"ob": ob, "rewards": self.reward_dict, "score": score}
+        truncated = False
 
-        return ob, reward, done, env_info
+        return ob, float(reward), bool(done), bool(truncated), env_info
 
     def get_score(self, obs):
         hand_pos = obs[-6:-3]
@@ -117,15 +116,13 @@ class Reacher7DOFEnv(mujoco_env.MujocoEnv, utils.EzPickle):
 
         self.model.site_pos[self.target_sid] = [0.1, 0.1, 0.1]
 
-        observation, _reward, done, _info = self.step(np.zeros(7))
+        observation, _reward, done, truncated, _info = self.step(np.zeros(7))
         ob = self._get_obs()
+        info = {}  # you can add anything useful here
 
-        return ob
+        return ob, info
 
-    def reset_model(self, seed=None):
-        if seed is not None:
-            self.seed(seed)
-
+    def reset_model(self): 
         self.reset_pose = self.init_qpos.copy()
         self.reset_vel = self.init_qvel.copy()
 
